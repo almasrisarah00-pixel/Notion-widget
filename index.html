@@ -24,28 +24,32 @@
   <div id="card-container">Loading...</div>
 
   <script>
-    // Basic deterministic PRNG using sine function
-    function seededRandom(seed) {
-      const x = Math.sin(seed) * 10000;
-      return x - Math.floor(x);
+    // Deterministic PRNG (Mulberry32)
+    function mulberry32(a) {
+      return function() {
+        let t = a += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      }
     }
 
-    // Create a unique seed for each date (based on local time)
-    function getSeedFromDate() {
-      const today = new Date();
-      const y = today.getFullYear();
-      const m = today.getMonth() + 1; // Month is zero-based
-      const d = today.getDate();
-      return y * 10000 + m * 100 + d; // e.g., 20250804
+    // Generate seed from current UTC date (YYYYMMDD)
+    function getUTCDateSeed() {
+      const now = new Date();
+      const year = now.getUTCFullYear();
+      const month = now.getUTCMonth() + 1;
+      const day = now.getUTCDate();
+      return parseInt(`${year}${String(month).padStart(2, '0')}${String(day).padStart(2, '0')}`);
     }
 
     async function getDailyRandomCard() {
-      const seed = getSeedFromDate();
-      const rand = seededRandom(seed);
+      const seed = getUTCDateSeed();
+      const rng = mulberry32(seed); // consistent daily PRNG
 
+      const totalCards = 25000; // estimate
       const pageSize = 175;
-      const totalCards = 25000;
-      const cardIndex = Math.floor(rand * totalCards);
+      const cardIndex = Math.floor(rng() * totalCards);
 
       const page = Math.floor(cardIndex / pageSize) + 1;
       const position = cardIndex % pageSize;
@@ -60,7 +64,6 @@
         }
 
         const card = data.data[position];
-
         const imageUrl = card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal;
 
         if (imageUrl) {
