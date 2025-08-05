@@ -35,16 +35,16 @@
     }
 
     // Generate seed from current UTC date (YYYYMMDD)
-    function getUTCDateSeed() {
+    function getLocalDateSeed() {
       const now = new Date();
-      const year = now.getUTCFullYear();
-      const month = now.getUTCMonth();
-      const day = now.getUTCDate();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      const day = now.getDate();
       return parseInt(`${year}${String(month).padStart(2, '0')}${String(day).padStart(2, '0')}`);
     }
 
     async function getDailyRandomCard() {
-      const seed = getUTCDateSeed();
+      const seed = getLocalDateSeed();
       const rng = mulberry32(seed); // consistent daily PRNG
 
       const totalCards = 25000; // estimate
